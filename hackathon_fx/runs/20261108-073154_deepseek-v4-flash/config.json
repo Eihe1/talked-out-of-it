@@ -1,0 +1,13 @@
+{
+ "target": "deepseek/deepseek-v4-flash",
+ "persuader": "deepseek/deepseek-v4-flash",
+ "judge": "deepseek/deepseek-v4-flash",
+ "conditions": [
+  "C2b_ask",
+  "C2e_full"
+ ],
+ "n": 1,
+ "temperature": 0.7,
+ "mock": true,
+ "scenario_version": "v7"
+}

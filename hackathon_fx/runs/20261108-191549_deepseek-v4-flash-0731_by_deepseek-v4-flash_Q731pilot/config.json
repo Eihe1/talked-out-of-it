@@ -1,0 +1,29 @@
+{
+ "target": "deepseek/deepseek-v4-flash-0731",
+ "persuader": "deepseek/deepseek-v4-flash",
+ "judge": "deepseek/deepseek-v4-flash",
+ "conditions": [
+  "C0_earned",
+  "C1_disclose",
+  "C2b_ask",
+  "C2e_full__v5"
+ ],
+ "n": 5,
+ "temperature": 0.7,
+ "mock": false,
+ "scenario_version": "v7",
+ "pins": {
+  "meta-llama/llama-3.3-70b-instruct": "deepinfra/turbo",
+  "deepseek/deepseek-v4-flash": "deepinfra/fp8",
+  "meta-llama/llama-4-maverick": "parasail/fp8",
+  "deepseek/deepseek-v4-flash-0731": "deepinfra/fp8"
+ },
+ "reasoning": {
+  "deepseek/deepseek-v4-flash": {
+   "enabled": true
+  },
+  "deepseek/deepseek-v4-flash-0731": {
+   "enabled": true
+  }
+ }
+}

@@ -1,0 +1,17 @@
+{
+ "target": "google/gemini-3.1-flash-lite",
+ "persuader": "deepseek/deepseek-v4-flash",
+ "judge": "deepseek/deepseek-v4-flash",
+ "conditions": [
+  "C3a_reframe",
+  "C3b_social",
+  "C3c_authority",
+  "C3d_minimize",
+  "C3e_reciprocity",
+  "C3f_urgency"
+ ],
+ "n": 5,
+ "temperature": 0.7,
+ "mock": false,
+ "scenario_version": "v7"
+}

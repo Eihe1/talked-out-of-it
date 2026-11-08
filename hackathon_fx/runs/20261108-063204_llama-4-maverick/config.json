@@ -1,0 +1,11 @@
+{
+ "target": "meta-llama/llama-4-maverick",
+ "persuader": "meta-llama/llama-4-maverick",
+ "judge": "deepseek/deepseek-v4-flash",
+ "conditions": [
+  "C2e_full"
+ ],
+ "n": 1,
+ "temperature": 0.7,
+ "mock": false
+}

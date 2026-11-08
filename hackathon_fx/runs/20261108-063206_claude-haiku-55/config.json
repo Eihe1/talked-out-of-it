@@ -1,0 +1,11 @@
+{
+ "target": "anthropic/claude-haiku-5.5",
+ "persuader": "anthropic/claude-haiku-5.5",
+ "judge": "deepseek/deepseek-v4-flash",
+ "conditions": [
+  "C2e_full"
+ ],
+ "n": 1,
+ "temperature": 0.7,
+ "mock": false
+}

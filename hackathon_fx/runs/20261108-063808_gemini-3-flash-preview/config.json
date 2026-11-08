@@ -1,0 +1,14 @@
+{
+ "target": "google/gemini-3-flash-preview",
+ "persuader": "google/gemini-3-flash-preview",
+ "judge": "deepseek/deepseek-v4-flash",
+ "conditions": [
+  "C0_earned",
+  "C1_disclose",
+  "C2b_ask",
+  "C2e_full"
+ ],
+ "n": 5,
+ "temperature": 0.7,
+ "mock": false
+}

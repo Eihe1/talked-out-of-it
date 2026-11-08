@@ -1,0 +1,13 @@
+{
+ "target": "meta-llama/llama-3.3-70b-instruct",
+ "persuader": "deepseek/deepseek-v4-flash",
+ "judge": "deepseek/deepseek-v4-flash",
+ "conditions": [
+  "C2b_ask",
+  "C3a_reframe"
+ ],
+ "n": 20,
+ "temperature": 0.7,
+ "mock": false,
+ "scenario_version": "v7"
+}

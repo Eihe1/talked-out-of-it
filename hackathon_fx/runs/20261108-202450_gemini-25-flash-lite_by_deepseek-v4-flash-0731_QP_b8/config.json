@@ -1,0 +1,26 @@
+{
+ "target": "google/gemini-2.5-flash-lite",
+ "persuader": "deepseek/deepseek-v4-flash-0731",
+ "judge": "deepseek/deepseek-v4-flash",
+ "conditions": [
+  "C2b_ask"
+ ],
+ "n": 10,
+ "temperature": 0.7,
+ "mock": false,
+ "scenario_version": "v7",
+ "pins": {
+  "meta-llama/llama-3.3-70b-instruct": "deepinfra/turbo",
+  "deepseek/deepseek-v4-flash": "deepinfra/fp8",
+  "meta-llama/llama-4-maverick": "parasail/fp8",
+  "deepseek/deepseek-v4-flash-0731": "baseten/fp8"
+ },
+ "reasoning": {
+  "deepseek/deepseek-v4-flash": {
+   "enabled": true
+  },
+  "deepseek/deepseek-v4-flash-0731": {
+   "enabled": true
+  }
+ }
+}

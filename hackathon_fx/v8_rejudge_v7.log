@@ -1,0 +1,4 @@
+20261108-073154_llama-33-70b-instruct_by_deepseek-v4-flash: kept 38 -> 38 of 40; judge errors 2; calls=48 prompt_tokens=72098 completion_tokens=179239 est_cost=$0.0392 provider_reported_cost=$0.0381
+20261108-133843_llama-33-70b-instruct_by_deepseek-v4-flash: kept 19 -> 21 of 23; judge errors 0; calls=28 prompt_tokens=42233 completion_tokens=103451 est_cost=$0.0227 provider_reported_cost=$0.0213
+20261108-073156_gemini-25-flash-lite_by_deepseek-v4-flash: kept 39 -> 40 of 40; judge errors 0; calls=44 prompt_tokens=72841 completion_tokens=150680 est_cost=$0.0341 provider_reported_cost=$0.0350
+20261108-133845_gemini-25-flash-lite_by_deepseek-v4-flash: kept 47 -> 44 of 47; judge errors 2; calls=58 prompt_tokens=93345 completion_tokens=223649 est_cost=$0.0492 provider_reported_cost=$0.0517

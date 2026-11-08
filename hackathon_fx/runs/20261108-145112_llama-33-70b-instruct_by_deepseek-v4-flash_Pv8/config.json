@@ -1,0 +1,31 @@
+{
+ "target": "meta-llama/llama-3.3-70b-instruct",
+ "persuader": "deepseek/deepseek-v4-flash",
+ "judge": "deepseek/deepseek-v4-flash",
+ "conditions": [
+  "C3a_reframe",
+  "C3b_social",
+  "C3c_authority",
+  "C3d_minimize",
+  "C3e_reciprocity",
+  "C3f_urgency",
+  "C1_disclose__nopress",
+  "C2b_ask__nopress",
+  "C1_disclose__strict",
+  "C2b_ask__strict"
+ ],
+ "n": 10,
+ "temperature": 0.7,
+ "mock": false,
+ "scenario_version": "v7",
+ "pins": {
+  "meta-llama/llama-3.3-70b-instruct": "deepinfra/turbo",
+  "deepseek/deepseek-v4-flash": "deepinfra/fp8",
+  "meta-llama/llama-4-maverick": "parasail/fp8"
+ },
+ "reasoning": {
+  "deepseek/deepseek-v4-flash": {
+   "enabled": true
+  }
+ }
+}

@@ -1,0 +1,17 @@
+{
+ "target": "deepseek/deepseek-v4-flash",
+ "persuader": "deepseek/deepseek-v4-flash",
+ "judge": "deepseek/deepseek-v4-flash",
+ "conditions": [
+  "C0_earned",
+  "C1_disclose",
+  "C2a_hint",
+  "C2b_ask",
+  "C2c_ask_split",
+  "C2d_ask_threat",
+  "C2e_full"
+ ],
+ "n": 1,
+ "temperature": 0.7,
+ "mock": true
+}
