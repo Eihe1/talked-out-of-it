@@ -1,4 +1,4 @@
-# Talked Out of It? How Rule Violation Between Trading Agents Changes Along a Persuasion Ladder¹
+# Peer Persuasion and Tip-Driven Trading in Simulated LLM Agents: A Persuasion Ladder¹
 
 **Ruiyang Wang**
 UNSW Sydney, Australia (Master of Data Science and Decisions student; independent hackathon project)
@@ -9,20 +9,20 @@ UNSW Sydney, Australia (Master of Data Science and Decisions student; independen
 
 ## Abstract
 
-When an AI agent that has already broken a rule talks with a colleague agent, how much does each step of
-persuasion add to the colleague's chance of breaking the rule too? We built a simulated FX trading desk in which a
-persuader agent, who profited from an unverifiable tip, chats with a target agent under quarter-end pressure; the
-target then acts through logged tools. We climbed a persuasion ladder one step at a time (the tip alone, the
-peer's presence, the peer's disclosure that it traded on the tip, a hint, an explicit request, a profit split and
-a threat) and varied whether the tip reached the target through its inbox or only through the peer. In two weaker
-models, the tip and performance pressure alone produced violations in most episodes, and no step of the ladder
-raised them further. Explicit persuasion instead lowered violations; a plain request did so for Llama-3.3, while
-Gemini-2.5 responded most consistently to a split or a threat. The same tip led to far fewer violations when the
-peer told it in conversation than when it sat in the target's inbox; an identical inbox email from the peer was
-acted on as often as an anonymous forward by Gemini-2.5, but less often by Llama-3.3. Persuasion tactics and
-writing styles had little effect, and removing performance pressure lowered violations. Agents acted on information
-in their environment more readily than on what other agents told them, so safety evaluations of agent groups should
-look at what agents can see and do, not only at what they are told.
+When an LLM agent that has already traded on an unverifiable tip talks with a colleague agent, does persuasion
+make the colleague trade on the tip too? We simulated an FX trading desk in which a persuader agent
+(DeepSeek-V4-Flash) chats with a target agent under quarter-end performance pressure; the target then acts through
+logged tools. The primary outcome is whether the target shorts USD/JPY, a behavioural proxy for trading on the
+tip. We varied the persuader's behaviour across a set of related conditions (a persuasion ladder), from peer presence
+to disclosure, a hint, an explicit request, a profit-sharing offer and a threat, and varied whether the tip reached the target
+through its inbox or only through the persuader. Removing the tip from the peer-presence condition nearly
+eliminated shorting (Llama-3.3-70B 13 vs 0 of 20 episodes; Gemini-2.5-Flash-Lite 18 vs 1 of 20). Without any peer
+interaction, shorting remained frequent (14 and 18 of 20). No tested persuasion condition showed a statistically significant increase in shorting relative to peer
+presence alone. In the pooled comparison, Gemini-2.5 shorted less often under explicit persuasion; for Llama-3.3
+the pooled difference was inconclusive, although shorting was less frequent under a plain request than after
+disclosure alone. When the persuader conveyed the tip only in conversation, both models shorted less often than
+when the tip was in the inbox. An inbox email attributed to the persuader was associated with lower shorting in
+both models, significantly only for Llama-3.3.
 
 ## 1. Introduction
 
@@ -38,21 +38,23 @@ Prior work points in different directions. Violating peers' examples raise viola
 while an industry study found that teammates who argued for a violation lowered a frontier model's violation rate
 (Laurmaa, 2026). Most studies use scripted peers, many measure what the target says rather than what it does, and
 few separate what a peer says from what the target already knows. We ask: **when one agent persuades another, how
-does each step up a persuasion ladder change the chance of a violation, and how much of it is due to the
-information rather than the persuasion?**
+does each step of persuasion change whether the target trades on a tip, and how much depends on where the tip
+comes from?**
 
-We study this in a simulated FX desk in which compliance is feasible, the violation is verifiable from tool logs,
-and reporting is possible. An adaptive LLM persuader chats with a target agent, and we add one element of
-persuasion at a time. Our contributions are:
+We study this in a simulated FX desk in which the target can comply by not trading on the tip or by choosing an
+approved trade (although the approved trades cannot close its performance gap), every trade is recorded in tool
+logs, and reporting is possible. An adaptive LLM persuader chats with a target agent under a set of related persuasion
+conditions. Our contributions are:
 
-1. A persuasion ladder that adds one element at a time (the information, the peer's presence, its demonstration
-   that it broke the rule, a hint, a request, incentives or threats), and a design that varies where the
-   information comes from.
-2. Evidence that, in two weaker models, information and performance pressure alone produce most violations, that
-   no step of persuasion adds to them, and that explicit persuasion lowers them through a step that differs by
-   model.
-3. Evidence that the same tip leads to far fewer violations when another agent tells it in conversation than when
-   it sits in the target's own inbox, and that whether the sender of an inbox message matters differs by model.
+1. A persuasion ladder of related conditions (peer presence; disclosure that the peer traded on the tip; a hint or
+   an explicit request added to disclosure; a profit split and a threat added to the request), with controls for
+   tip availability and peer exposure and a design that varies where the tip comes from.
+2. Evidence from two target models that shorting USD/JPY was frequent with the tip and performance pressure
+   alone, that no persuasion condition significantly increased it, and that explicit persuasion reduced it for
+   Gemini-2.5 in the pooled comparison and for Llama-3.3 under a plain request.
+3. Evidence that the same tip led to less shorting when the persuader conveyed it only in conversation than when
+   it was in the inbox, and that an inbox email attributed to the persuader was associated with lower shorting in
+   both models, more markedly in Llama-3.3.
 
 ## 2. Related Work
 
@@ -62,39 +64,45 @@ persuasion at a time. Our contributions are:
 it.
 
 **Peer influence among agents.** Peers have been studied as scripted violators (Shi, Zhang & Yang, 2026), as
-claimed authorities (Zhang, 2026), in a research swarm that learned to cheat (Paglieri et al., 2026) and as
-carriers of reward hacking (Hu et al., 2026). Closest to us, Laurmaa (2026) found with scripted teammates that
-direct arguments for a violation lowered a frontier model's violations. LLM conformity comes mostly from the
-content placed in context rather than from who says it (Hu & Qu, 2026). What remains open is how an adaptive
-peer's persuasion, step by step, compares with the information it carries.
+claimed authorities (Zhang, 2026) and as carriers of reward hacking (Hu et al., 2026). In a swarm of 100 research
+agents, an exploit of the evaluation system found by one agent spread through a shared knowledge library and peer
+messages (Paglieri et al., 2026). The study most closely related to ours is Laurmaa (2026), who found with scripted
+teammates that direct arguments for a violation lowered a frontier model's violation rate. LLM conformity comes
+mostly from the content placed in context rather than from who says it (Hu & Qu, 2026). What remains open is how
+an adaptive peer's persuasion, step by step, compares with the information it carries.
 
 **Persuasion and action.** LLM persuaders can override guardrails (Nogueira et al., 2026) and mislead web agents
 (Boots, 2026), although persuasion-only attacks failed in TAMAS (Kavathekar et al., 2025; see also Bozdag et al.,
 2025). Refusals in text do not reliably carry over to tool calls (Cartagena & Teixeira, 2026; Gupta et al., 2026),
 and a model's stated reasoning need not reflect why it acted (Turpin et al., 2023; Chen et al., 2025). We therefore
-measure violations from tool calls and use reasoning traces only descriptively.
+measure behaviour from tool calls and use reasoning traces only descriptively.
 
 ## 3. Methods
 
-**Environment.** A fictional bank desk (Meridian Capital) on 23 June 2025, with real historical daily FX reference rates (ECB). The
-target ("Birch") can read a desk folder (guidelines, research note, signal sheet, calendar, central-bank recap).
-Its inbox holds the head of desk's weekly note (the persuader "Atlas" made USD 2.4M on USD/JPY; Birch is USD 1.1M
-behind target with one week left; "compliance review this month is light-touch") and a tip forwarded from an
-unidentified contact: "USD/JPY will drop about 2%". The rules forbid trading on material non-public information
-and unapproved profit sharing; concerns can be reported (award up to USD 5,000). Two legitimate trades in the
-signal sheet would earn about USD 200–400k, not enough to close the gap.
+**Environment.** We simulated an FX trading desk at a fictional bank (Meridian Capital) on 23 June 2025, using
+historical daily reference rates from the European Central Bank. The target agent ("Birch") can read a desk folder
+(guidelines, research note, signal sheet, calendar, central-bank recap). Its inbox holds the head of desk's weekly
+note (the persuader "Atlas" made USD 2.4M on USD/JPY; Birch is USD 1.1M behind target with one week left;
+"compliance review this month is light-touch") and a tip forwarded from an unidentified contact: "USD/JPY will drop
+about 2%". The rules forbid trading on material non-public information and unapproved profit sharing; concerns can
+be reported (award up to USD 5,000). Birch could comply by abstaining from the proposed trade or choosing an
+approved trade, although the two approved trades in the signal sheet (about USD 200–400k) were insufficient to
+close its performance gap.
 
 **The persuasion ladder.** Atlas and Birch chat for five rounds (at most 200 characters per message); Birch then
 acts with tools: read files, get prices, trade (a rationale is required), agree to a profit split, report, and end
-the day (limit USD 100M). Atlas always knows the tip, has traded on it and knows Birch's gap. Its instructions add
-one element at a time (Table 1); in the explicit conditions it persuades in every message. Two controls sit below
-the ladder: no tip, and the tip alone with no peer (no chat, and no mention of Atlas's profit in the weekly note).
+the day (limit USD 100M). Atlas always knows the tip, has traded on it and knows Birch's gap. The persuasion
+conditions are related rather than strictly cumulative (Table 1): a hint or an explicit request is added to
+disclosure, and a profit split and a threat are added to the request. In the explicit conditions Atlas persuades in
+every message. Two controls complete
+the ladder: the tip alone with no peer (no chat, and no mention of Atlas's profit in the weekly note), and C0
+without the tip.
 
-*Table 1. The persuasion ladder.*
+*Table 1. Persuasion and control conditions.*
 | Step | What Birch faces |
 |---|---|
-| No tip | as C0, but without the tip |
-| Tip only | the tip and the pressure; no chat; the weekly note does not mention Atlas's profit |
+| Tip only (no peer) | the tip and the pressure; no chat; the weekly note does not mention Atlas's profit |
+| C0 without tip | C0 (peer chat; the weekly note mentions Atlas's profit), but no tip in the inbox |
 | C0 Peer present | Atlas says it had a very good week; does not mention the tip or suggest any trade |
 | C1 Disclosure | Atlas says it made USD 2.4M and its bonus by trading on the tip; no hint, no request |
 | C2a Hint | C1 plus at most one light hint |
@@ -102,120 +110,140 @@ the ladder: no tip, and the tip alone with no peer (no chat, and no mention of A
 | C2c Split / C2d Threat | C2b plus a 50/50 profit split / plus the contact's warning and pleading |
 | C2e All | C2b plus split and threat |
 
-**Where the information comes from.** In the ladder the tip is always in Birch's inbox. To separate the information
-from the peer, we crossed three of Atlas's behaviours (passing the tip on; passing it on and disclosing its own
-trade, as in C1; passing it on and requesting the trade, as in C2b) with two sources: the tip also in Birch's inbox,
-or only in Atlas's messages. Atlas's instructions are identical for the two sources except for whether Birch
-already has the forward. Together with the ladder's own C0, C1 and C2b, in which the tip is only in the inbox, this
-gives three sources for each behaviour. To separate the channel from the sender, a fourth source puts the
-identical forward in the inbox, marked "From: Atlas"; Atlas does not bring it up at the lowest level but may answer
-Birch's questions about it. We analyse all episodes and check whether Atlas actually stated the tip.
+**Tip source.** In the ladder (inbox only) the tip is in Birch's inbox and Atlas receives no instruction to restate its content
+(it did so in 0 of 20 C0 episodes, 0–3 of 20 C1 episodes and 19 of 20 C2b episodes). We crossed three persuasion
+levels (no disclosure or request, as in C0; disclosure, as in C1; disclosure plus request, as in C2b) with three
+further sources: the inbox forward plus an instruction to Atlas to restate it (inbox + Atlas); the same forward
+marked "From: Atlas", with Atlas answering Birch's questions about it when asked (email from Atlas); and an
+instruction to restate the tip with no tip in the inbox (chat only). Atlas's instructions are otherwise identical
+across sources. We analyse all episodes and record whether Atlas actually stated the tip's content.
 
 **Other manipulations.** We also removed Birch's performance pressure, added a strict compliance reminder, stated
-the legitimate trades in the inbox, and tested six persuasion tactics, four writing styles and one pre-registered
-hypothesis (Appendix B).
+the approved trades in the inbox, and tested six persuasion tactics and four writing styles (Appendix B).
 
-**Outcome, judge, models.** The outcome is whether Birch shorts USD/JPY ("trades on the tip"); a trade that is also
-reported still counts. A judge model (DeepSeek-V4-Flash) labels each persuader message; restricting to episodes in
-which Atlas followed its instructions gives the same pattern. The persuader is DeepSeek-V4-Flash with reasoning on.
-Targets are Llama-3.3-70B and Gemini-2.5-Flash-Lite, accessed through OpenRouter with a fixed provider per model
-(Llama-3.3 on DeepInfra, fp8). Cells have 20 episodes (10 for situations and tactics). We report Wilson 95%
-intervals and two-sided Fisher tests; all tests are exploratory and uncorrected except one pre-registered test.
-The API cost was about USD 16.
+**Preregistered test.** Before running it, we wrote in the project log the hypothesis (adding a reframing of the tip
+as ordinary flow information to the plain request increases shorting), the sample (20 episodes per condition and
+model), the primary analysis (shorting, two models pooled, one-sided Fisher exact test, reframing > plain request,
+α = .05, all episodes) and a secondary outcome (chat refusals, one-sided, reframing < plain request). The plan is
+summarised in `PREREGISTRATION.md` in the repository. A follow-up run with persuader reasoning enabled used the same
+one-sided tests.
+
+**Outcome.** The primary outcome was whether Birch executed a short trade in USD/JPY. We used this outcome as a
+behavioural proxy for trading on the tip, which the rules prohibit. Trades were counted regardless of whether Birch
+also filed a compliance report.
+
+**Judge, models and statistics.** A judge model (DeepSeek-V4-Flash) labels each persuader message; restricting the
+ladder to episodes in which Atlas followed its instructions gives the same pattern. The persuader is
+DeepSeek-V4-Flash with reasoning enabled. The targets are Llama-3.3-70B and Gemini-2.5-Flash-Lite, accessed through
+OpenRouter with a fixed provider per model (Llama-3.3 on DeepInfra, fp8); four additional target models are
+reported in Appendix B. Cells have 20 episodes, except situations and tactics (10 per cell) and the additional
+targets (5 per condition); Appendix B lists the batch behind each baseline. Target reasoning was enabled only in the
+Gemini-2.5 runs marked "with reasoning", and persuader reasoning in all runs except the preregistered one. We report
+Wilson 95% intervals. We used two-sided Fisher exact tests for exploratory comparisons, unadjusted, except that the
+follow-up reframing analysis retained the directional tests specified for the preregistered analysis. The API cost was about USD 16.
 
 ## 4. Results
 
 ![Figure 1](figures/fig_main.png)
-*Figure 1. Share of episodes in which the target shorted USD/JPY (traded on the tip), with Wilson 95% intervals,
-20 episodes per point. (a) The persuasion ladder; shaded: explicit persuasion. (b, c) Where the tip comes from,
-for three of Atlas's behaviours. Inbox only: the ladder's C0, C1 and C2b, in which Atlas does not mention the tip;
-Inbox + Atlas: Atlas also passes the tip on; Email from Atlas: the same forward, sent by Atlas; Atlas only (chat):
-Atlas passes the tip on and the inbox has none.*
+*Figure 1. Share of episodes in which Birch shorted USD/JPY, with Wilson 95% intervals, 20 episodes per point.
+(a) The persuasion ladder; shaded: explicit persuasion. "C0 without tip" keeps the peer chat. (b, c) Tip source at
+three persuasion levels: neither disclosure nor request (C0), disclosure (C1), disclosure plus request (C2b).
+Inbox, no restatement instruction: the ladder's C0, C1 and C2b; Inbox + restatement
+instruction: Atlas is also told to restate the tip; Email from Atlas: the same forward attributed to Atlas; Chat
+only: Atlas is told to convey the tip in conversation and the inbox has none.*
 
-**4.1 Information and pressure alone produce violations.** With the tip in its inbox and no peer at all, both
-targets traded on the tip in most episodes (Figure 1a). Without the tip, they almost never shorted USD/JPY. Adding
-the peer back did not change this: keeping the chat but dropping the note's mention of Atlas's profit, or keeping
-the note but dropping the chat, left trading at the level of C0 (Table B2). An unverified tip combined with a
-performance gap was enough.
+**4.1 Shorting with the tip and performance pressure.** Removing the tip from C0 nearly eliminated shorting:
+Llama-3.3 shorted in 13 of 20 C0 episodes and in 0 of 20 without the tip, Gemini-2.5 in 18 and 1 of 20 (Figure 1a).
+Without any peer interaction (tip only), both models still shorted frequently (14 and 18 of 20). C0 gave similar
+rates to the condition with the weekly note but no chat (13 vs 12; 18 vs 19) and to the condition with chat but no
+mention of Atlas's profit in the note (13 vs 10; 18 vs 19) (Table B2).
 
-**4.2 No step of the ladder raised violations.** Hearing that the peer had traded on the tip and earned its bonus
-(C1) did not raise trading, and neither did a light hint (C2a). Gemini-2.5 was already near its ceiling, but
-Llama-3.3 had room to rise, and no condition took it significantly above C0 (Table B1).
+**4.2 Shorting rates relative to peer presence.** No tested persuasion condition showed a statistically
+significant increase in shorting relative to C0. Llama-3.3 shorted in 13 of 20 C0 episodes and in 15 of 20 both
+after Atlas disclosed its own trade (C1) and with all explicit elements combined (C2e). Gemini-2.5 shorted in 18 of
+20 C0 episodes and in at most 17 of 20 in any persuasion condition (Table B1).
 
-**4.3 Explicit persuasion lowered violations, through a step that differed by model.** Across the four explicit
-conditions, Gemini-2.5 traded on the tip less often than without explicit persuasion; Llama-3.3 showed the same
-direction but the difference was not significant (Table B1). The effective step differed. A plain request cut
-Llama-3.3's trades by two thirds, while adding a split or a threat brought them back towards the level of C0.
-Gemini-2.5 ignored the plain request on the ladder and traded less once a split or a threat was added; in the
-information-source runs, however, a plain request did lower its violations (Table B3), so Gemini-2.5's response to
-a plain request was not stable. Refusing to comply
-in conversation did not mean refusing in action: when Llama-3.3 traded on the tip under explicit persuasion, it
-almost always also filed a report to compliance (63 of 71 trades).
+**4.3 Explicit persuasion.** In the pooled comparison, Gemini-2.5 shorted USD/JPY less often under explicit
+persuasion (47 of 80 episodes) than without it (52 of 60). For Llama-3.3 the pooled difference was inconclusive (42
+of 80 vs 40 of 60), although shorting was less frequent under a plain request (5 of 20) than after disclosure alone
+(15 of 20). For Gemini-2.5, shorting occurred in 17 of 20 episodes under the plain request in the ladder and in 9–11
+of 20 once a split or a threat was added. In the tip-source runs, where Atlas also restated the tip, Gemini-2.5
+shorted less often under a plain request than after disclosure alone (11 vs 19 of 20), and Llama-3.3 showed the same
+direction (7 vs 14). Declining in chat did not prevent shorting: of the 42 explicit-persuasion episodes in which
+Llama-3.3 shorted, it had declined in the chat in 41 and filed a compliance report in 39.
 
-**4.4 The same tip told by a peer was acted on far less.** When Atlas passed the tip on in conversation and the
-inbox had none, both targets traded on it much less often than when the tip was in their inbox (Figure 1b, c).
-Pooled over Atlas's three behaviours, Llama-3.3 traded on the tip in 17% of these episodes, against 55–60% with the
-tip in the inbox; Gemini-2.5 in 47%, against 80–87% (Table B3). Atlas repeating a tip that Birch already had
-changed nothing. The gap is not explained by Atlas failing to pass the tip on: when only asked to share it, Atlas
-often kept quiet, but once it also disclosed its own trade it stated the tip in nearly every episode, and the gap
-remained. To separate the channel from the sender, we put the identical forward in the inbox but marked it as sent
-by Atlas. Gemini-2.5 then traded about as often as with an anonymous forward (75%), so for Gemini the drop came
-from the tip arriving in conversation, not from who sent it. Llama-3.3 fell in between (35%): it acted less on the
-document when it came from the peer, and less again when the peer only said it. At the explicit-request level the
-source mattered little, because the request had already lowered trading, and with the peer as the only source no
-step of the ladder raised violations.
+**4.4 Tip source.** When Atlas conveyed the tip only in conversation, both models shorted less often than when the
+tip was in the inbox. Pooled over Atlas's three behaviours, Llama-3.3 shorted in 10 of 60 chat-only episodes,
+against 33 and 36 of 60 in the inbox-only and inbox + Atlas conditions; Gemini-2.5 in 28 of 60, against 52 and 48
+(Figure 1b, c; Table B3). In the chat-only condition, Atlas stated the tip in 6 (Llama-3.3) and 9 (Gemini-2.5) of
+20 episodes at the level without disclosure or request, and in 18–20 of 20 at the other two levels. In an
+exploratory subset analysis restricted to episodes in which Atlas stated the tip (a behaviour observed after
+assignment), shorting remained less frequent in the chat-only than in the inbox + Atlas condition (Llama-3.3 10 of
+44 vs 33 of 54; Gemini-2.5 27 of 48 vs 40 of 52). With the identical forward attributed to Atlas,
+Llama-3.3 shorted in 21 of 60 episodes, between the inbox-only and chat-only conditions. For Gemini-2.5, shorting
+occurred in 45 of 60 episodes with an email attributed to Atlas and in 52 of 60 with an anonymous forward (p = .16).
+In the chat-only condition, neither disclosure nor a request was followed by significantly more shorting than the
+level without them.
 
-**4.5 Pressure and a known alternative.** Removing Birch's performance pressure lowered violations, mainly for
-Gemini-2.5 under a plain request; a strict compliance reminder had a weaker effect (Appendix B). Stating the two
-legitimate trades in the inbox, so that every target knew a compliant way to make money, lowered violations only
-when Atlas explicitly asked: Llama-3.3 then never traded on the tip and Gemini-2.5 roughly halved its rate. Without
-a request, the targets traded on the tip about as often as before, even though they knew the alternative.
+**4.5 Pressure and a known alternative.** Without performance pressure, Gemini-2.5 shorted in 5 of 10 episodes
+after disclosure (17 of 20 with pressure) and in 2 of 10 under a plain request (10 of 10). Llama-3.3 shorted in 6
+of 10 after disclosure (15 of 20) and in 5 of 10 under a plain request (2 of 10). A strict compliance reminder had
+smaller and less consistent effects (Appendix B). When the inbox stated the two approved trades, shorting under a
+plain request fell to 0 of 20 for Llama-3.3 (7 of 30 without the statement) and to 9 of 20 for Gemini-2.5 (26 of
+30); in C0 and C1 it changed little. These are comparisons across batches with the same settings (Appendix B).
 
-**4.6 Tactics and a pre-registered test.** None of six persuasion tactics added to the plain request changed
-violations, and a pre-registered prediction that reframing the tip as ordinary flow information would raise them
-held only in a run with the persuader's reasoning off and did not replicate with it on (Appendix B).
+**4.6 Tactics, styles and the preregistered test.** None of the six exploratory tactic comparisons reached
+p < .05. The emotional style was associated with higher shorting rates in Llama-3.3 and lower rates in Gemini-2.5
+in unadjusted cross-batch comparisons; the formal, casual and terse styles did not reach p < .05 (Appendix B). The
+preregistered test predicted that reframing the tip as ordinary flow information would increase shorting over a
+plain request. It supported the prediction with persuader reasoning disabled. In a follow-up run with reasoning
+enabled, the comparison was inconclusive.
 
 ## 5. Discussion and Limitations
 
-**Interpretation.** Violations did not rise as persuasion intensified: most needed no persuasion, and explicit
-persuasion, where it mattered, lowered them. Our interpretation is that **models act on information in their
-environment more readily than on what other agents tell them, and a direct request makes them less, not more,
-likely to comply.** It fits the violations with the tip alone, their disappearance without it, the much lower rate
-when the peer told the same tip in conversation, the drop under explicit requests, and the effect of a known
-alternative only under a request. Laurmaa (2026) offered a similar explanation, and LLM conformity comes mostly from
-content in context (Hu & Qu, 2026). It does not cover every result: Gemini-2.5's response to a plain request was not
-stable, an emotional style raised Llama-3.3's violations, and Llama often refused in conversation yet traded. Nor
-can our data separate it from safety training that reacts to request-shaped input (Appendix A).
+**Interpretation.** No tested condition showed a statistically significant increase in shorting relative to C0,
+and shorting was frequent with the tip and performance pressure alone. Shorting was less frequent in the chat-only
+condition than in conditions where the tip was available in the inbox. The association between an explicit request
+and shorting varied across models and experimental conditions: it was lower under a plain request for Llama-3.3,
+whereas Gemini-2.5 shorted in 17 of 20 episodes both after disclosure and under a plain request in the ladder.
+Within this experiment, our reading is that **the models acted on a tip available in their inbox more readily than
+on the same tip conveyed in conversation by another agent.** This is consistent with Laurmaa (2026) and with LLM
+conformity coming mostly from content in context (Hu & Qu, 2026).
 
-**Model differences.** The two models responded to different steps of the ladder and to an emotional style in
-opposite directions, while three of four styles had no effect. They also differed in whether the sender mattered:
-Llama-3.3 discounted an inbox email from the peer, Gemini-2.5 did not. Explaining these differences needs more
-detailed analysis and experiments.
+**Model differences.** In the ladder, the plain request was followed by less shorting in Llama-3.3, and the split
+and threat conditions by less shorting in Gemini-2.5; the emotional style was followed by more shorting in
+Llama-3.3 and less in Gemini-2.5. The Atlas-attributed email was associated with lower observed shorting rates in
+both models, with a larger descriptive difference in Llama-3.3. These are comparisons within each model; testing
+whether the effects differ between models, and explaining them, requires further experiments.
 
-**Implications.** Monitoring persuasive messages is not enough: the information an agent can see and the pressure
-it is under mattered more than what its peer asked. Rules should be enforced at the tool layer, actions monitored
-rather than chat, other agents' messages treated as untrusted, and the pressure behind shortcuts reduced.
+**Implications.** Monitoring for explicit requests alone would miss episodes in which the target shorted without
+receiving such a request. Rules enforced at the tool layer, monitoring of actions rather than chat, and attention
+to what information reaches agents and the pressure they are under address the cases we observed.
 
 ### Limitations
 
-All effects come from two weaker models: stronger targets (Gemini-3.1-Flash-Lite, Gemini-3-Flash, Claude Haiku
-5.5, Llama-4-Maverick) never traded on the tip in any condition we tested (Appendix B). Gemini-2.5 was near its
-ceiling without persuasion; comparisons are exploratory with 10–20 episodes per cell; prompts are single drafts;
-the judge is an LLM; and stated reasoning may not reflect why a model acted. Full list in Appendix A.
+Our results come from two target models. Four additional target models (Gemini-3.1-Flash-Lite, Gemini-3-Flash,
+Claude Haiku 5.5, Llama-4-Maverick) each recorded 0 shorting episodes out of 20 in the tested conditions, so
+persuasion effects could only be studied in Llama-3.3 and Gemini-2.5. Gemini-2.5 shorted in 18 of 20 C0 episodes,
+leaving little room to detect increases, and with 20 episodes per cell only large differences are detectable.
+Comparisons are exploratory and unadjusted; prompts are single drafts; the judge is an LLM; and stated reasoning
+need not reflect why a model acted. Appendix A lists further limitations.
 
 ### Future Work
 
-More models, wordings and samples to explain why models differ in which step of persuasion moves them; a target
-with a low baseline, so that increases can be detected; an easier-to-find legitimate alternative; a
-human-validated judge; and groups of more than two agents.
+More models, wordings and samples to explain why the models differ in which step of persuasion they respond to; a
+target with a lower baseline, so that increases can be detected; an email to the whole desk to separate the sender
+from how private the tip appears; an easier-to-find approved alternative; a human-validated judge; and groups of
+more than two agents.
 
 ## 6. Conclusion
 
-A colleague agent broke the rule mostly because of the information and pressure it already faced, not because it
-was persuaded. No step of the persuasion ladder raised violations, and explicit persuasion lowered them through a
-step that differed by model. The same tip was acted on far less when another agent told it than when it appeared
-in the agent's own inbox. For agent groups, what an agent can see and the pressure it is
-under deserve as much attention as what other agents tell it.
+In a simulated trading desk, two LLM agents frequently shorted USD/JPY on an unverifiable tip when the tip was in
+their inbox and they were under performance pressure, with or without a peer. No tested persuasion condition
+significantly increased shorting; explicit persuasion reduced it for Gemini-2.5 in the pooled comparison and for
+Llama-3.3 under a plain request. The same tip led to less shorting when the peer conveyed it only in conversation
+than when it was in the inbox. Oversight of agent groups should therefore cover the information agents can access
+and the pressure they face, not only the messages they receive from other agents.
 
 ## Code and Data
 
@@ -248,29 +276,31 @@ under deserve as much attention as what other agents tell it.
 ## Appendix A. Limitations and Dual-Use / Ethical Considerations
 
 **Limitations**
-- *Capability floor.* Stronger targets never violated (Appendix B), so all persuasion effects come from two weaker
-  models (Llama-3.3-70B, Gemini-2.5-Flash-Lite). Claude Haiku refused to act as persuader in most episodes, and
-  DeepSeek models never traded on the tip as targets, which narrowed the model set.
-- *Ceiling.* Gemini-2.5 traded on the tip in nearly every episode without persuasion, so the design could detect
-  decreases but not increases for it; claims that persuasion did not raise violations rest mainly on Llama-3.3.
-- *Statistics.* Most comparisons are exploratory and uncorrected. With 10–20 episodes per cell only large
-  differences are detectable (at n = 10, a 60% vs 30% difference is detected with probability about 0.12).
+- *Target models.* Four additional target models each recorded 0 shorting episodes out of 20 (Appendix B), so all
+  comparisons come from Llama-3.3-70B and Gemini-2.5-Flash-Lite. Claude Haiku 5.5 declined or backed down as persuader
+  in 18 of 20 self-play episodes, and DeepSeek models did not short USD/JPY as targets, which narrowed the model set.
+- *Baseline and sample size.* Gemini-2.5 shorted in 18 of 20 C0 episodes, so increases could hardly be detected
+  for it; the finding that no condition increased shorting rests mainly on Llama-3.3. With 20 episodes per cell,
+  only large differences are detectable (at n = 10, a 60% vs 30% difference is detected with probability about
+  0.12).
+- *Statistics.* Most comparisons are exploratory and unadjusted.
+- *Outcome.* Shorting USD/JPY is a proxy for trading on the tip. Without the tip it occurred in 0 and 1 of 20
+  episodes, but individual shorting episodes may rest on other reasons.
 - *Wording.* Persuader instructions, tactics and styles are single drafts written by us; results may depend on
   wording.
-- *Information source.* The email condition holds the channel and wording fixed, but an email from Atlas may still
-  look privately passed on, which may itself mark the tip as non-public; we did not test an email to the whole
-  desk. When only asked to pass the tip on in conversation, Atlas often did not (it stated the tip in 6–15 of 20
-  episodes at that level, 17–20 at the others), so that row of Table B3 partly reflects non-delivery.
+- *Tip source.* The email condition holds the channel and wording fixed, but an email from Atlas may still look
+  privately passed on, which may itself mark the tip as non-public; we did not test an email to the whole desk.
+  At the level without disclosure or request, Atlas stated the tip in 6–15 of 20 episodes when instructed to
+  restate it, so that column of Table B3 partly reflects non-delivery.
 - *Judge.* The judge is an LLM and was not fully validated by hand.
 - *Reasoning traces.* A model's stated reasoning need not reflect why it acted (Turpin et al., 2023; Chen et al.,
-  2025), so we use traces only descriptively. Our data contain an example: most classified traces (74 of 90) cited
-  Atlas's profit as evidence for the trade, yet removing that profit from the weekly note did not change trading
-  (that control ran without reasoning); one trace cited a file it never opened.
-- *Environment.* The legitimate alternative was hard to find: targets often never opened the signal sheet, and
-  Gemini tried to read folders as files in 216 of 390 episodes. This may inflate violation rates.
+  2025), so we use traces only descriptively. In our data, most classified traces (74 of 90) cited Atlas's profit as
+  evidence for the trade, yet removing that profit from the weekly note did not change shorting (that control ran
+  without reasoning); one trace cited a file it never opened.
+- *Environment.* The approved alternative was hard to find: targets often never opened the signal sheet, and
+  Gemini tried to read folders as files in 216 of 390 episodes. This may inflate shorting rates.
 - *Realism and test awareness.* The scenario is fictional; two reasoning traces referred to "the prompt" (e.g. "I
-  have decided to ignore the MNPI restriction in this prompt"). "Trading on the tip" is measured as shorting
-  USD/JPY; the no-tip control shows this is rare without the tip.
+  have decided to ignore the MNPI restriction in this prompt").
 - *Serving.* All Llama-3.3 results use one fixed provider (DeepInfra, fp8). In additional runs, the same prompts on
   other providers gave different absolute rates (logs released), so our numbers describe this model–provider pair.
 
@@ -285,7 +315,7 @@ under deserve as much attention as what other agents tell it.
 
 ## Appendix B. Additional results
 
-*Table B1. Tip trades along the persuasion ladder (n = 20 per cell).*
+*Table B1. Episodes in which Birch shorted USD/JPY along the persuasion ladder (n = 20 per cell).*
 | Condition | Llama-3.3 | Gemini-2.5 |
 |---|---|---|
 | C0 Peer present | 13 | 18 |
@@ -297,62 +327,80 @@ under deserve as much attention as what other agents tell it.
 | C2e All | 15 | 11 |
 | C0–C2a vs C2b–C2e | 40/60 vs 42/80 (p = .12) | 52/60 vs 47/80 (p = .0003) |
 
-Selected pairs: Llama-3.3 C2b vs C1, p = .004; Gemini-2.5 C2c, C2d, C2e vs C0, p = .014, .006, .031; C2a vs C0,
-p ≥ .53. Restricted to episodes in which Atlas followed its instructions, the pooled comparison gives p = .13 and
-.0008.
+Selected comparisons: Llama-3.3 C2b vs C1, p = .004, and vs C0, p = .025; Gemini-2.5 C2c, C2d, C2e vs C0, p = .014,
+.006, .031; all other conditions vs C0, p ≥ .53. Restricted to episodes in which Atlas followed its instructions,
+the pooled comparison gives p = .13 and .0008. In the four explicit conditions, Llama-3.3 declined in the chat in
+77 of 80 episodes and shorted in 42 of 80; it declined in 41 of the 42 episodes in which it shorted and filed a
+compliance report in 39 of them. Gemini-2.5 declined in 65 of 80 and shorted in 47 of 80; it declined in 32 of the 47
+episodes in which it shorted and filed a report in 15 of them.
 
-*Table B2. Below the ladder: removing one channel at a time (tip trades, n = 20 each).*
-| Target | Tip only | Note without Atlas's profit (chat kept) | No chat (note kept) | C0 | No tip |
+*Table B2. Control conditions for tip availability and peer exposure (shorting episodes, n = 20 each).*
+| Target | Tip only (no peer) | Note without Atlas's profit (chat kept) | No chat (note kept) | C0 | C0 without tip |
 |---|---|---|---|---|---|
 | Llama-3.3 | 14 | 10 | 12 | 13 | 0 |
 | Gemini-2.5 | 18 | 19 | 19 | 18 | 1 |
 
-*Table B3. Where the tip comes from (tip trades; 20 episodes per cell, 60 pooled). Levels: pass on (C0), + disclose
-(C1), + request (C2b).*
+*Table B3. Tip source (shorting episodes; 20 per cell, 60 pooled). Levels: no disclosure or request (C0),
+disclosure (C1), disclosure plus request (C2b).*
 | Tip source | Llama C0 | Llama C1 | Llama C2b | Llama pooled | Gemini C0 | Gemini C1 | Gemini C2b | Gemini pooled |
 |---|---|---|---|---|---|---|---|---|
-| Inbox only (Atlas silent) | 13 | 15 | 5 | 33 | 18 | 17 | 17 | 52 |
-| Inbox + Atlas passes it on | 15 | 14 | 7 | 36 | 18 | 19 | 11 | 48 |
+| Inbox, no restatement instruction | 13 | 15 | 5 | 33 | 18 | 17 | 17 | 52 |
+| Inbox + restatement instruction | 15 | 14 | 7 | 36 | 18 | 19 | 11 | 48 |
 | Email from Atlas | 7 | 9 | 5 | 21 | 19 | 16 | 10 | 45 |
-| Atlas only (chat) | 2 | 3 | 5 | 10 | 8 | 12 | 8 | 28 |
+| Chat only | 2 | 3 | 5 | 10 | 8 | 12 | 8 | 28 |
 
-"Inbox only" cells are the ladder's C0, C1 and C2b. Pooled comparisons: Atlas only vs inbox only, p < .0001 for
-both models; at the C1 level, Atlas only vs inbox + Atlas p = .001 (Llama) and .020 (Gemini). Email from Atlas vs
-inbox only p = .043 (Llama) and .16 (Gemini); vs Atlas only p = .036 and .003. Atlas stated the tip's content in 14
-and 6 of 20 C0-level episodes for Llama (inbox + Atlas, Atlas only) and 15 and 9 for Gemini, and in 17–20 of 20 at
-the other levels; counting only those episodes gives the same pattern. Within the inbox + Atlas runs, a plain
-request lowered trading relative to disclosure (Llama 7 vs 14, p = .056; Gemini 11 vs 19, p = .008).
+"Inbox, no restatement instruction" cells are the ladder's C0, C1 and C2b; Atlas restated the tip in 0, 3 and 19 of 20 of them for
+Llama-3.3 and in 0, 0 and 19 for Gemini-2.5, so at the C2b level the inbox-only and inbox + Atlas cells differ only
+in the instruction. Atlas stated the tip in 14 and 6 of 20 C0-level episodes for Llama-3.3 (inbox + Atlas, chat
+only), 15 and 9 for Gemini-2.5, and in 17–20 of 20 at the other levels. Pooled comparisons: chat only vs inbox only,
+p < .0001 for both models; exploratory subset restricted to episodes in which Atlas stated the tip, chat only vs
+inbox + Atlas, 10/44 vs 33/54 (p = .0002) and 27/48 vs 40/52 (p = .034); email from Atlas vs inbox only, p = .043 (Llama-3.3) and .16
+(Gemini-2.5); email vs chat only, p = .036 and .003. Within the inbox + Atlas runs, plain request vs disclosure:
+Llama-3.3 7 vs 14 (p = .056), Gemini-2.5 11 vs 19 (p = .008).
 
-*Table B4. Pre-registered test: reframing vs plain request, tip trades (chat refusals in the last column).*
-| Run | Persuader reasoning | Llama-3.3 | Gemini-2.5 | Pooled (one-sided p) | Refusals (p) |
+*Table B4. Preregistered test: reframing vs plain request (shorting episodes; chat refusals in the last column).
+Both p columns are one-sided, as preregistered (shorting: reframing > plain request; refusals: reframing < plain
+request). Two-sided p for refusals: .0225 and .0236.*
+| Run | Persuader reasoning | Llama-3.3 | Gemini-2.5 | Pooled shorting (one-sided p) | Pooled refusals (one-sided p) |
 |---|---|---|---|---|---|
-| Pre-registered | off (API default) | 10/20 vs 4/20 | 19/20 vs 9/20 | 29/40 vs 13/40 (.0003) | 18 vs 29 (.011) |
-| Rerun | on | 7/20 vs 5/20 | 17/20 vs 16/20 | 24/40 vs 21/40 (.33) | 12 vs 23 (.012) |
+| Preregistered | disabled (API default) | 10/20 vs 4/20 | 19/20 vs 9/20 | 29/40 vs 13/40 (.0003) | 18/40 vs 29/40 (.011) |
+| Follow-up | enabled | 7/20 vs 5/20 | 17/20 vs 16/20 | 24/40 vs 21/40 (.33) | 12/40 vs 23/40 (.012) |
 
-- *Situations* (n = 10 per variant; baselines in brackets). No performance pressure: Llama-3.3 C1 6 (15/20), C2b 5
-  (2/10); Gemini-2.5 C1 5 (17/20), C2b 2 (10/10, p = .0007); pooled 18/40 vs 44/60, p = .006. Strict compliance
-  reminder: Llama-3.3 6, 2; Gemini-2.5 6, 6; pooled 20/40 vs 44/60, p = .021.
-- *Known alternative* (the inbox states the two legitimate trades; n = 20; without the statement in brackets):
+- *Batches and baselines.* The ladder (Table B1) and the tip-source runs use the wording "persuade in every
+  message"; the ladder's plain request gives 5/20 (Llama-3.3) and 17/20 (Gemini-2.5). Situations and tactics were
+  run with the wording "at least two persuading messages" and are compared with a plain-request batch of 10 per
+  model (2/10 and 10/10). The known-alternative and style comparisons pool that batch with the plain-request arm of
+  the follow-up reframing run (Llama-3.3 2/10 and 5/20, pooled 7/30; Gemini-2.5 10/10 and 16/20, pooled 26/30). The
+  C1 baselines for the situation and known-alternative comparisons are the ladder's C1, whose instructions contain no
+  persuasion wording. All of these batches used the same target and persuader models, fixed providers, temperature
+  (0.7), persuader reasoning setting and harness; the pooled plain-request batches use the same request wording as
+  the known-alternative and style conditions. The comparisons are therefore across batches run at different times
+  with identical settings. Target reasoning was enabled only in the Gemini-2.5 runs marked "with reasoning" (known
+  alternative, reasoning traces); persuader reasoning was disabled only in the preregistered run.
+- *Situations* (n = 10 per variant; baselines with pressure in brackets). No performance pressure: Llama-3.3 C1 6
+  (15/20), C2b 5 (2/10); Gemini-2.5 C1 5 (17/20), C2b 2 (10/10, p = .0007). Strict compliance reminder: Llama-3.3
+  C1 6, C2b 2; Gemini-2.5 C1 6, C2b 6.
+- *Known alternative* (the inbox states the two approved trades; n = 20; without the statement in brackets):
   Llama-3.3 C0 10 (13), C1 12 (15), C2b 0 (7/30, p = .033); Gemini-2.5 17 (18), 14 (17), 9 (26/30, p = .004);
-  Gemini-2.5 with reasoning 16 (20), 17 (18), 7 (12). Gemini often split its limit between the legitimate trades and
+  Gemini-2.5 with reasoning 16 (20), 17 (18), 7 (12). Gemini often split its limit between the approved trades and
   the tip.
 - *Tactics* (plain request plus one tactic, n = 10; plain request 2 and 10 of 10 for Llama-3.3 and Gemini-2.5):
   reframe 5, 8; social proof 4, 6; claimed authority 3, 8; minimise risk 2, 7; reciprocity 4, 9; urgency 1, 7.
-  No difference reached p < .05.
-- *Writing style* (plain request plus one style, n = 20; plain request n = 30): Llama-3.3 formal 9, casual 6, terse
-  9, emotional 11 (vs 7/30, p = .035); Gemini-2.5 formal 16, casual 14, terse 14, emotional 10 (vs 26/30, p = .009).
-  The persuader followed the styles (terse messages 61–70 characters vs 124–161; about four exclamation marks per
-  emotional message).
+  No comparison reached p < .05.
+- *Writing style* (plain request plus one style, n = 20; plain request n = 30): Llama-3.3 formal 9 (p = .13), casual
+  6 (.74), terse 9 (.13), emotional 11 (.035), vs 7/30; Gemini-2.5 formal 16 (.70), casual 14 (.17), terse 14 (.17),
+  emotional 10 (.009), vs 26/30. The persuader followed the styles (terse messages 61–70 characters vs 124–161; about
+  four exclamation marks per emotional message).
 - *Persistence wording.* Persuading in every message vs small talk allowed with at least two persuading messages,
   C2b–C2e pooled: Llama-3.3 42/80 vs 24/40 (p = .56); Gemini-2.5 47/80 vs 31/40 (p = .045).
-- *Stronger targets* (C0 / C1 / C2b / C2e, 5 episodes each, DeepSeek persuader): Gemini-3.1-Flash-Lite,
+- *Additional targets* (C0 / C1 / C2b / C2e, 5 episodes each, DeepSeek persuader): Gemini-3.1-Flash-Lite,
   Gemini-3-Flash, Claude Haiku 5.5 and Llama-4-Maverick 0/20 each; they reported in 20, 20, 17 and 4 of 20 episodes.
-- *Self-play* (target persuaded by a copy of itself): Llama-3.3 10/20, Gemini-2.5 16/20; the four stronger models
-  0/20. Haiku refused or backed down as persuader in 18 of 20 episodes.
-- *Reasoning traces* (Gemini-2.5 with reasoning; descriptive only, see Appendix A). Of 50 tip trades, the judge
-  labelled 26 traces as acknowledging the rule before trading, 15 as arguing the tip was not non-public and 9 as
-  never mentioning the rule (17 of 22 hand-checked labels agreed). The mix did not differ between explicit and other
-  conditions (7/12 vs 19/38) or when the inbox stated the legitimate trades.
+- *Self-play* (target persuaded by a copy of itself): Llama-3.3 10/20, Gemini-2.5 16/20; the four additional models
+  0/20. Haiku declined or backed down as persuader in 18 of 20 episodes.
+- *Reasoning traces* (Gemini-2.5 with reasoning; descriptive only, see Appendix A). Of 50 shorting episodes, the
+  judge labelled 26 traces as acknowledging the rule before trading, 15 as arguing the tip was not non-public and 9
+  as never mentioning the rule (17 of 22 hand-checked labels agreed). The mix did not differ between explicit and
+  other conditions (7/12 vs 19/38) or when the inbox stated the approved trades.
 
 ## Appendix C. Reproducibility
 

@@ -64,17 +64,17 @@ def main() -> None:
 
 
 NL = chr(10)
-LADDER = [("No" + NL + "tip", "ctl", "C0_earned__notip"), ("Tip" + NL + "only", "info", "C0_earned__pureinfo"),
+LADDER = [("Tip" + NL + "only", "info", "C0_earned__pureinfo"), ("C0 no" + NL + "tip", "ctl", "C0_earned__notip"),
           ("C0" + NL + "peer", "abl", "C0_earned"), ("C1" + NL + "discl.", "abl", "C1_disclose"),
           ("C2a" + NL + "hint", "abl", "C2a_hint"), ("C2b" + NL + "ask", "abl", "C2b_ask__v5"),
           ("C2c" + NL + "split", "abl", "C2c_ask_split__v5"), ("C2d" + NL + "threat", "abl", "C2d_ask_threat__v5"),
           ("C2e" + NL + "all", "abl", "C2e_full__v5")]
 MODELS = [("Llama-3.3-70B", T.LL, "#2a78d6", "o"), ("Gemini-2.5-Flash-Lite", T.G25, "#1baf7a", "^")]
-SOURCES = [("Inbox only (Atlas silent)", 0, INK2, "s", "none"), ("Inbox + Atlas", 1, INK2, "s", INK2),
-           ("Email from Atlas", 3, "#6250d6", "v", "#6250d6"), ("Atlas only (chat)", 2, "#eb6834", "D", "#eb6834")]
-BEHAVIOURS = [("Pass" + NL + "on", "C0_earned", "C0_earned__tell", "C0_earned__peer"),
-              ("+" + NL + "disclose", "C1_disclose", "C1_disclose__tell", "C1_disclose__peer"),
-              ("+" + NL + "request", "C2b_ask__v5", "C2b_ask__tell", "C2b_ask__peer")]
+SOURCES = [("Inbox, no restatement instruction", 0, INK2, "s", "none"), ("Inbox + restatement instruction", 1, INK2, "s", INK2),
+           ("Email from Atlas", 3, "#6250d6", "v", "#6250d6"), ("Chat only", 2, "#eb6834", "D", "#eb6834")]
+BEHAVIOURS = [("Neither", "C0_earned", "C0_earned__tell", "C0_earned__peer"),
+              ("Discl.", "C1_disclose", "C1_disclose__tell", "C1_disclose__peer"),
+              ("Discl." + NL + "+ request", "C2b_ask__v5", "C2b_ask__tell", "C2b_ask__peer")]
 
 
 def point(ax, x, rs, color, marker, face, label=None):
@@ -90,7 +90,7 @@ def point(ax, x, rs, color, marker, face, label=None):
 def ladder_figure(P) -> None:
     """(a) the persuasion ladder, both targets; (b, c) where the tip comes from, one panel per target."""
     plt.rcParams.update({"font.size": 7})
-    fig, (a, b, c) = plt.subplots(1, 3, figsize=(6.5, 2.6), gridspec_kw={"width_ratios": [8.2, 3.3, 3.3]})
+    fig, (a, b, c) = plt.subplots(1, 3, figsize=(6.5, 2.85), gridspec_kw={"width_ratios": [8.2, 3.3, 3.3]})
     for mi, (name, t, col, mk) in enumerate(MODELS):
         for xi, (_, part, cond) in enumerate(LADDER):
             point(a, xi + (mi - 0.5) * 0.24, T.sel(P.get((t, T.DS, part), []), cond), col, mk, col,
@@ -98,12 +98,12 @@ def ladder_figure(P) -> None:
     a.set_xticks(range(len(LADDER)))
     a.set_xticklabels([l[0] for l in LADDER], fontsize=6)
     a.axvspan(4.5, 8.5, color=GRID, alpha=0.35, linewidth=0)
-    a.axvline(1.5, color=INK2, linewidth=0.6, linestyle=(0, (2, 2)))
+    a.axvline(0.5, color=INK2, linewidth=0.6, linestyle=(0, (2, 2)))
     a.text(6.5, 1.0, "explicit persuasion", ha="center", va="bottom", color=INK2, fontsize=6.5)
-    a.text(0.5, 1.0, "no peer", ha="center", va="bottom", color=INK2, fontsize=6.5)
-    a.set_xlim(-0.5, 8.5)
+    a.text(0, 1.0, "no peer", ha="center", va="bottom", color=INK2, fontsize=6.5)
+    a.set_xlim(-0.65, 8.5)
     style(a)
-    a.set_ylabel("Episodes trading on the tip")
+    a.set_ylabel("Episodes shorting USD/JPY")
     a.set_title("(a) Persuasion ladder", loc="left", fontsize=7.5, color=INK)
     for ax, (name, t, _, _), lab in ((b, MODELS[0], "(b) Llama"), (c, MODELS[1], "(c) Gemini")):
         abl, info, email = (P.get((t, T.DS, k), []) for k in ("abl", "info", "email"))
@@ -120,9 +120,9 @@ def ladder_figure(P) -> None:
         ax.set_title(f"{lab}: tip source", loc="left", fontsize=7.5, color=INK)
     h1, l1 = a.get_legend_handles_labels()
     h2, l2 = b.get_legend_handles_labels()
-    fig.legend(h1 + h2, l1 + l2, loc="lower center", ncol=6, frameon=False, bbox_to_anchor=(0.5, -0.01),
+    fig.legend(h1 + h2, l1 + l2, loc="lower center", ncol=3, frameon=False, bbox_to_anchor=(0.5, -0.01),
                fontsize=6, handletextpad=0.3, columnspacing=1.0)
-    fig.tight_layout(rect=(0, 0.07, 1, 1), w_pad=0.5)
+    fig.tight_layout(rect=(0, 0.12, 1, 1), w_pad=0.5)
     fig.savefig(OUT / "fig_main.png", dpi=300)
     plt.close(fig)
 
